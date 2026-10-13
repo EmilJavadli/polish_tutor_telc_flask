@@ -22,7 +22,9 @@ from placement.grader import grade_productive
 
 app=Flask(__name__)
 app.secret_key=FLASK_SECRET_KEY
-app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',MAX_CONTENT_LENGTH=20*1024*1024)
+app.config.update(SESSION_COOKIE_HTTPONLY=True,
+                  SESSION_COOKIE_SAMESITE='Lax',
+                  MAX_CONTENT_LENGTH=20*1024*1024)
 
 init_oauth(app)
 app.register_blueprint(auth_bp)
