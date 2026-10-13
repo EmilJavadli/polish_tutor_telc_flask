@@ -20,8 +20,13 @@ from placement.test_bank import GRAMMAR_VOCAB,READING,LISTENING,READING_TEXT,LIS
 from placement.scoring import objective_profile,classify
 from placement.grader import grade_productive
 
-app=Flask(__name__);app.secret_key=FLASK_SECRET_KEY;app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',MAX_CONTENT_LENGTH=20*1024*1024)
-init_oauth(app);app.register_blueprint(auth_bp);main=Blueprint('main',__name__)
+app=Flask(__name__)
+app.secret_key=FLASK_SECRET_KEY
+app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',MAX_CONTENT_LENGTH=20*1024*1024)
+
+init_oauth(app)
+app.register_blueprint(auth_bp)
+main=Blueprint('main',__name__)
 
 
 def current():
