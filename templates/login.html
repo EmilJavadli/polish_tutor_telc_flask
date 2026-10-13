@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block body %}<main class="login"><div class="login-card"><div class="logo">PL</div><h1>Polish Tutor</h1><p>Personalized Polish learning from placement to TELC B1.</p><a class="primary" href="{{url_for('auth.login')}}">Continue with Google</a>{% if dev_login %}<small>Local development login is enabled.</small>{% endif %}</div></main>{% endblock %}

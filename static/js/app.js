@@ -1,0 +1,2 @@
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const gen=$('#generateLesson');if(gen)gen.onclick=async()=>{gen.disabled=true;$('#generateStatus').textContent='Generating lesson…';let r=await fetch('/api/lesson/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({day:Number(gen.dataset.day)})});if(r.ok)location.reload();else{$('#generateStatus').textContent='Generation failed';gen.disabled=false}};
