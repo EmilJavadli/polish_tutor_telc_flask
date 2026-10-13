@@ -5,8 +5,7 @@ from flask import Flask,Blueprint,Response,jsonify,redirect,render_template,requ
 from dotenv import load_dotenv
 load_dotenv()
 from config import FLASK_SECRET_KEY,DATA_DIR,QUIZ_PASS_SCORE,DEV_LOGIN
-from database.connection import get_engine,get_session_factory
-from database.models import Base
+from database.connection import get_session_factory
 from auth.google_oidc import bp as auth_bp,init_oauth,identity_from_session
 from repositories.user_repository import UserRepository
 from repositories.lesson_repository import LessonRepository
@@ -23,7 +22,7 @@ from placement.grader import grade_productive
 
 app=Flask(__name__);app.secret_key=FLASK_SECRET_KEY;app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Lax',MAX_CONTENT_LENGTH=20*1024*1024)
 init_oauth(app);app.register_blueprint(auth_bp);main=Blueprint('main',__name__)
-Base.metadata.create_all(get_engine())
+
 
 def current():
  ident=identity_from_session()

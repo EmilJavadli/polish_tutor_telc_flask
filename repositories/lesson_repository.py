@@ -1,3 +1,4 @@
+import uuid
 """User-scoped replacement for the old shared file repository."""
 import datetime as dt
 from pathlib import Path
@@ -6,7 +7,11 @@ from agent.schemas import Lesson,QuizAttempt,ExerciseAttempt,ListeningAttempt,Wr
 from database.models import LessonRecord,LessonAttempt,UserProfile,LessonProgress
 KINDS={'quiz':QuizAttempt,'exercises':ExerciseAttempt,'listening':ListeningAttempt,'writing':WritingAttempt,'speaking':SpeakingAttempt}
 class LessonRepository:
-    def __init__(self,sf,user_id,audio_root=Path('data/audio')):self.sf=sf;self.user_id=user_id;self.audio_dir=Path(audio_root)/str(user_id);self.audio_dir.mkdir(parents=True,exist_ok=True)
+    def __init__(self,sf,user_id,audio_root=Path('data/audio')):
+        self.sf=sf
+        self.user_id=uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        self.audio_dir=Path(audio_root)/str(self.user_id)
+        self.audio_dir.mkdir(parents=True,exist_ok=True)
     @property
     def current_day(self):
         with self.sf() as s:return s.get(UserProfile,self.user_id).current_plan_position

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone
 from sqlalchemy import select
 from database.models import User,UserProfile
@@ -12,4 +13,6 @@ class UserRepository:
                 u.email=identity.email;u.display_name=identity.name;u.picture_url=identity.picture;u.last_login_at=datetime.now(timezone.utc)
             s.commit();s.refresh(u);return u
     def profile(self,user_id):
+        if isinstance(user_id, str):
+            user_id = uuid.UUID(user_id)
         with self.sf() as s:return s.get(UserProfile,user_id)

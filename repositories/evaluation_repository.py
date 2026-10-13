@@ -1,3 +1,4 @@
+import uuid
 """Persistence for initial placement tests and optional placement retakes."""
 from datetime import datetime, timezone
 from sqlalchemy import select, update
@@ -8,7 +9,7 @@ from curriculum import recommend_start_position
 class EvaluationRepository:
     def __init__(self, session_factory, user_id):
         self.session_factory = session_factory
-        self.user_id = user_id
+        self.user_id = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
     def current(self):
         with self.session_factory() as session:
@@ -159,7 +160,11 @@ class EvaluationRepository:
 
     @staticmethod
     def _personalization_rules(scores):
-        order={"A0":0,"A1":1,"A2":2,"B1":3}
-        levels={k:(v.get("level","A0") if isinstance(v,dict) else "A0") for k,v in scores.items()}
-        values={k:order.get(v,0) for k,v in levels.items()};weak=min(values.values(),default=0);strong=max(values.values(),default=0)
-        return {"skill_levels":levels,"priority_skills":[k for k,v in values.items() if v==weak],"maintenance_skills":[k for k,v in values.items() if v==strong and v>=2],"extra_listening":values.get("listening",0)<2,"extra_speaking":values.get("speaking",0)<2,"extra_writing":values.get("writing",0)<2,"extra_grammar":values.get("grammar_vocab",0)<2}
+        return {
+            "priority_skills": [k for k, v in scores.items() if v < 45],
+            "maintenance_skills": [k for k, v in scores.items() if v >= 65],
+            "extra_listening": scores.get("listening", 100) < 45,
+            "extra_speaking": scores.get("speaking", 100) < 45,
+            "extra_writing": scores.get("writing", 100) < 45,
+            "extra_grammar": scores.get("grammar_vocab", 100) < 45,
+        }
