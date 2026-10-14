@@ -1,7 +1,7 @@
 const lesson=JSON.parse(document.querySelector('#lessonData').textContent),day=window.LESSON_DAY;let panel=document.querySelector('#lessonPanel');let chatHistory=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function choices(items,url){let answers={};panel.innerHTML=items.map(q=>`<div class="question"><b>${esc(q.prompt||q.question)}</b>${(q.options||[]).map((o,i)=>`<button data-id="${q.id}" data-a="${i}">${esc(o)}</button>`).join('')}${q.type&&q.type!=='choice'&&q.type!=='multiple_choice'?`<input data-text="${q.id}">`:''}</div>`).join('')+'<button class="primary" id="submitChoices">Submit</button><div id="answerResult"></div>';panel.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{panel.querySelectorAll(`[data-id="${b.dataset.id}"]`).forEach(x=>x.classList.remove('selected'));b.classList.add('selected');answers[b.dataset.id]=Number(b.dataset.a)});$('#submitChoices').onclick=async()=>{panel.querySelectorAll('[data-text]').forEach(x=>answers[x.dataset.text]=x.value);let r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers})}),j=await r.json();$('#answerResult').innerHTML=`<div class="result">Score: ${Math.round(j.score*100)}%</div>`}}
-function render(name){if(name==='Reading')panel.innerHTML=`<small class="eyebrow">READING</small><h2>${esc(lesson.title_pl)}</h2><p class="reading">${esc(lesson.reading_pl)}</p><details><summary>Show translation</summary><p>${esc(lesson.reading_en)}</p></details><button class="secondary" id="readAudio">Create reading audio</button><audio id="audio" controls></audio>`;
+function render(name){if(name==='Reading')panel.innerHTML=`<small class="eyebrow">READING</small><h2>${esc(lesson.title_pl)}</h2><p class="reading">${esc(lesson.reading_pl)}</p><details><summary>Show translation</summary><p>${esc(lesson.reading_en)}</p></details><div class="reading-audio-actions"><button type="button" class="secondary" id="readAudioSlow">Create slow audio</button><button type="button" class="secondary" id="readAudioNormal">Create normal audio</button></div><audio id="readingAudio" controls></audio><div id="readingAudioError"></div>`;
 else if(name==='Listening'){panel.innerHTML=`<small class="eyebrow">LISTENING</small><h2>${esc(lesson.listening.situation_en)}</h2><button class="secondary" id="listenAudio">Create listening audio</button><audio id="audio" controls></audio><div id="listenQuestions"></div>`;let root=panel;setTimeout(()=>choicesInto(root.querySelector('#listenQuestions'),lesson.listening.tasks,`/api/lesson/${day}/listening`),0)}
 else if(name==='Words')panel.innerHTML=`<small class="eyebrow">VOCABULARY</small><h2>Key words</h2><div class="vocab">${lesson.new_vocabulary.map(w=>`<div><b>${esc(w.polish)}</b><span>${esc(w.english)}</span></div>`).join('')}</div>`;
 else if(name==='Grammar')panel.innerHTML=`<small class="eyebrow">GRAMMAR</small>${lesson.grammar_rules.map(g=>`<div class="grammar-card"><h3>${esc(g.title)}</h3><p>${esc(g.explanation)}</p></div>`).join('')}`;
@@ -11,75 +11,69 @@ else if(name==='Writing')panel.innerHTML=`<small class="eyebrow">WRITING</small>
 else if(name==='Speaking')panel.innerHTML=`<small class="eyebrow">SPEAKING</small><h2>${esc(lesson.speaking.title)}</h2><p>${esc(lesson.speaking.instructions_en)}</p><button class="primary" id="record">Start recording</button><button class="secondary" id="stop" hidden>Stop</button><audio id="preview" controls hidden></audio><button class="primary" id="submitAudio" hidden>Submit recording</button><details><summary>Type instead</summary><textarea id="typedSpeaking"></textarea><button class="primary" id="submitTyped">Submit typed answer</button></details><div id="speakingResult"></div>`;
 wire(name)}
 function choicesInto(root,items,url){let old=panel;panel=root;choices(items,url);panel=old}
-async function createLessonAudio(kind, button) {
-    const audioPlayer = document.querySelector('#audio');
-    if (!audioPlayer || !button) return;
+async function createLessonAudio(kind, button, playerId, errorId) {
+    const audioPlayer = document.getElementById(playerId);
+    const errorBox = document.getElementById(errorId);
+    if (!audioPlayer || !button) {
+        console.error('Audio controls missing:', {kind, playerId});
+        return;
+    }
 
     const originalLabel = button.textContent;
     button.disabled = true;
-    button.textContent = 'Creating audio…';
+    button.textContent = 'Creating audio...';
+    if (errorBox) errorBox.innerHTML = '';
 
     try {
-        // Flask exposes audio creation as POST. Setting <audio src> directly
-        // would issue GET, which is why the old buttons appeared to do nothing.
         const response = await fetch(`/api/lesson/${day}/audio/${kind}`, {
-            method: 'POST'
+            method: 'POST',
+            cache: 'no-store'
         });
-
         if (!response.ok) {
             const message = await response.text();
-            throw new Error(message || `Audio request failed (${response.status})`);
+            throw new Error(message || `HTTP ${response.status}`);
         }
+        const blob = await response.blob();
+        if (!blob.size) throw new Error('Server returned empty audio.');
 
-        const audioBlob = await response.blob();
-        if (!audioBlob.size) {
-            throw new Error('The server returned an empty audio file.');
-        }
-
-        // Revoke a previous temporary URL before replacing it.
         if (audioPlayer.dataset.objectUrl) {
             URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
         }
-
-        const objectUrl = URL.createObjectURL(audioBlob);
-        audioPlayer.dataset.objectUrl = objectUrl;
-        audioPlayer.src = objectUrl;
-        audioPlayer.hidden = false;
+        const url = URL.createObjectURL(blob);
+        audioPlayer.dataset.objectUrl = url;
+        audioPlayer.src = url;
         audioPlayer.load();
-
         button.textContent = 'Audio ready';
-
-        try {
-            await audioPlayer.play();
-        } catch (_) {
-            // Mobile/browser autoplay policies may require the learner to press Play.
-        }
     } catch (error) {
-        console.error('Audio creation failed:', error);
+        console.error(`${kind} audio failed`, error);
         button.textContent = originalLabel;
-
-        let errorBox = document.querySelector('#audioError');
-        if (!errorBox) {
-            errorBox = document.createElement('div');
-            errorBox.id = 'audioError';
-            errorBox.className = 'result audio-error';
-            audioPlayer.insertAdjacentElement('afterend', errorBox);
+        if (errorBox) {
+            errorBox.innerHTML = `<div class="result audio-error">Audio creation failed: ${esc(error.message)}</div>`;
         }
-        errorBox.textContent = `Audio creation failed: ${error.message}`;
     } finally {
         button.disabled = false;
     }
 }
-
 function wire(name) {
-    let a = $('#readAudio');
-    if (a) {
-        a.onclick = () => createLessonAudio('reading_normal', a);
+    const slow = document.getElementById('readAudioSlow');
+    if (slow) {
+        slow.addEventListener('click', () =>
+            createLessonAudio('reading_slow', slow, 'readingAudio', 'readingAudioError')
+        );
     }
 
-    a = $('#listenAudio');
-    if (a) {
-        a.onclick = () => createLessonAudio('listening', a);
+    const normal = document.getElementById('readAudioNormal');
+    if (normal) {
+        normal.addEventListener('click', () =>
+            createLessonAudio('reading_normal', normal, 'readingAudio', 'readingAudioError')
+        );
+    }
+
+    const listening = document.getElementById('listenAudio');
+    if (listening) {
+        listening.addEventListener('click', () =>
+            createLessonAudio('listening', listening, 'audio', 'audioError')
+        );
     }
 
     const w = $('#submitWriting');
