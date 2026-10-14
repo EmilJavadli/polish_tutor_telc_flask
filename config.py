@@ -17,3 +17,22 @@ PLACEMENT_VERSION= 'cefr-v2'
 DATA_DIR=Path(str(BASE_DIR/'data'))
 QUIZ_PASS_SCORE=.8
 DEV_LOGIN=os.getenv('DEV_LOGIN','1')=='1'
+
+# Lesson generation configuration
+# Restored for the original validated two-call OpenAI lesson generator.
+NEW_WORDS_PER_LESSON = int(os.getenv('NEW_WORDS_PER_LESSON', '15'))
+LISTENING_TASKS = int(os.getenv('LISTENING_TASKS', '5'))
+MAX_GENERATION_ATTEMPTS = int(os.getenv('MAX_GENERATION_ATTEMPTS', '3'))
+MAX_KNOWN_WORDS_IN_PROMPT = int(os.getenv('MAX_KNOWN_WORDS_IN_PROMPT', '250'))
+
+EXERCISE_COMPOSITION = {
+    'vocabulary': int(os.getenv('EXERCISES_VOCABULARY', '4')),
+    'grammar': int(os.getenv('EXERCISES_GRAMMAR', '9')),
+    'language_elements': int(os.getenv('EXERCISES_LANGUAGE_ELEMENTS', '3')),
+}
+
+QUIZ_COMPOSITION = {
+    'multiple_choice': int(os.getenv('QUIZ_MULTIPLE_CHOICE', '4')),
+    'fill_blank': int(os.getenv('QUIZ_FILL_BLANK', '3')),
+    'open': int(os.getenv('QUIZ_OPEN', '1')),
+}
