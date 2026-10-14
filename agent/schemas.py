@@ -150,7 +150,7 @@ class ExerciseAttempt(BaseModel):
 
 
 class ReadingAttempt(BaseModel):
-    """Saved result for a reading-comprehension submission."""
+    """Saved result for a Reading comprehension attempt."""
 
     score: float
     answers: dict[str, str]
