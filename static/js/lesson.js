@@ -11,7 +11,92 @@ else if(name==='Writing')panel.innerHTML=`<small class="eyebrow">WRITING</small>
 else if(name==='Speaking')panel.innerHTML=`<small class="eyebrow">SPEAKING</small><h2>${esc(lesson.speaking.title)}</h2><p>${esc(lesson.speaking.instructions_en)}</p><button class="primary" id="record">Start recording</button><button class="secondary" id="stop" hidden>Stop</button><audio id="preview" controls hidden></audio><button class="primary" id="submitAudio" hidden>Submit recording</button><details><summary>Type instead</summary><textarea id="typedSpeaking"></textarea><button class="primary" id="submitTyped">Submit typed answer</button></details><div id="speakingResult"></div>`;
 wire(name)}
 function choicesInto(root,items,url){let old=panel;panel=root;choices(items,url);panel=old}
-function wire(name){let a=$('#readAudio');if(a)a.onclick=()=>{$('#audio').src=`/api/lesson/${day}/audio/reading_normal`;$('#audio').load()};a=$('#listenAudio');if(a)a.onclick=()=>{$('#audio').src=`/api/lesson/${day}/audio/listening`;$('#audio').load()};let w=$('#submitWriting');if(w)w.onclick=async()=>{let r=await fetch(`/api/lesson/${day}/writing`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_index:0,text:$('#writing').value})}),j=await r.json();$('#writingResult').innerHTML=`<div class="result">${esc(j.result.feedback)}</div>`};if(name==='Speaking')wireRecorder()}
+async function createLessonAudio(kind, button) {
+    const audioPlayer = document.querySelector('#audio');
+    if (!audioPlayer || !button) return;
+
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Creating audio…';
+
+    try {
+        // Flask exposes audio creation as POST. Setting <audio src> directly
+        // would issue GET, which is why the old buttons appeared to do nothing.
+        const response = await fetch(`/api/lesson/${day}/audio/${kind}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || `Audio request failed (${response.status})`);
+        }
+
+        const audioBlob = await response.blob();
+        if (!audioBlob.size) {
+            throw new Error('The server returned an empty audio file.');
+        }
+
+        // Revoke a previous temporary URL before replacing it.
+        if (audioPlayer.dataset.objectUrl) {
+            URL.revokeObjectURL(audioPlayer.dataset.objectUrl);
+        }
+
+        const objectUrl = URL.createObjectURL(audioBlob);
+        audioPlayer.dataset.objectUrl = objectUrl;
+        audioPlayer.src = objectUrl;
+        audioPlayer.hidden = false;
+        audioPlayer.load();
+
+        button.textContent = 'Audio ready';
+
+        try {
+            await audioPlayer.play();
+        } catch (_) {
+            // Mobile/browser autoplay policies may require the learner to press Play.
+        }
+    } catch (error) {
+        console.error('Audio creation failed:', error);
+        button.textContent = originalLabel;
+
+        let errorBox = document.querySelector('#audioError');
+        if (!errorBox) {
+            errorBox = document.createElement('div');
+            errorBox.id = 'audioError';
+            errorBox.className = 'result audio-error';
+            audioPlayer.insertAdjacentElement('afterend', errorBox);
+        }
+        errorBox.textContent = `Audio creation failed: ${error.message}`;
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function wire(name) {
+    let a = $('#readAudio');
+    if (a) {
+        a.onclick = () => createLessonAudio('reading_normal', a);
+    }
+
+    a = $('#listenAudio');
+    if (a) {
+        a.onclick = () => createLessonAudio('listening', a);
+    }
+
+    const w = $('#submitWriting');
+    if (w) {
+        w.onclick = async () => {
+            const r = await fetch(`/api/lesson/${day}/writing`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({task_index: 0, text: $('#writing').value})
+            });
+            const j = await r.json();
+            $('#writingResult').innerHTML = `<div class="result">${esc(j.result.feedback)}</div>`;
+        };
+    }
+
+    if (name === 'Speaking') wireRecorder();
+}
 async function submitSpeaking(form){let r=await fetch(`/api/lesson/${day}/speaking`,{method:'POST',body:form}),j=await r.json();$('#speakingResult').innerHTML=`<div class="result">Transcript: ${esc(j.transcript)}<br>${esc(j.result.feedback)}</div>`}
 function wireRecorder(){let rec,chunks=[],blob;$('#record').onclick=async()=>{let stream=await navigator.mediaDevices.getUserMedia({audio:true});rec=new MediaRecorder(stream);rec.ondataavailable=e=>chunks.push(e.data);rec.onstop=()=>{blob=new Blob(chunks,{type:rec.mimeType});$('#preview').src=URL.createObjectURL(blob);$('#preview').hidden=false;$('#submitAudio').hidden=false;stream.getTracks().forEach(t=>t.stop())};rec.start();$('#record').hidden=true;$('#stop').hidden=false};$('#stop').onclick=()=>{rec.stop();$('#stop').hidden=true;$('#record').hidden=false};$('#submitAudio').onclick=()=>{let f=new FormData();f.append('audio',blob,'answer.webm');submitSpeaking(f)};$('#submitTyped').onclick=()=>{let f=new FormData();f.append('text',$('#typedSpeaking').value);submitSpeaking(f)}}
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');render(b.dataset.section)});render('Reading');
