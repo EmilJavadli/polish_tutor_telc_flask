@@ -19,78 +19,45 @@ async function submitSpeaking(form){let r=await fetch(`/api/lesson/${day}/speaki
 function wireRecorder(){let rec,chunks=[],blob;$('#record').onclick=async()=>{let stream=await navigator.mediaDevices.getUserMedia({audio:true});rec=new MediaRecorder(stream);rec.ondataavailable=e=>chunks.push(e.data);rec.onstop=()=>{blob=new Blob(chunks,{type:rec.mimeType});$('#preview').src=URL.createObjectURL(blob);$('#preview').hidden=false;$('#submitAudio').hidden=false;stream.getTracks().forEach(t=>t.stop())};rec.start();$('#record').hidden=true;$('#stop').hidden=false};$('#stop').onclick=()=>{rec.stop();$('#stop').hidden=true;$('#record').hidden=false};$('#submitAudio').onclick=()=>{let f=new FormData();f.append('audio',blob,'answer.webm');submitSpeaking(f)};$('#submitTyped').onclick=()=>{let f=new FormData();f.append('text',$('#typedSpeaking').value);submitSpeaking(f)}}
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');render(b.dataset.section)});render('Reading');
 async function sendChat() {
-    const input = $('#chatInput');
-    const sendButton = $('#chatSend');
-    const messages = $('#messages');
-    if (!input || !sendButton || !messages) return;
-
-    const msg = input.value.trim();
-    if (!msg || sendButton.disabled) return;
-
-    // Show the user's message immediately, before the network call.
-    messages.insertAdjacentHTML(
-        'beforeend',
-        `<div class="message you"><small>You</small>${esc(msg)}</div>`
-    );
-    messages.scrollTop = messages.scrollHeight;
-    input.value = '';
-    sendButton.disabled = true;
-    input.disabled = true;
-
-    const pendingId = `pending-${Date.now()}`;
-    messages.insertAdjacentHTML(
-        'beforeend',
-        `<div class="message tutorMsg pending" id="${pendingId}"><small>Tutor</small><span class="typing">Thinking<span>.</span><span>.</span><span>.</span></span></div>`
-    );
-    messages.scrollTop = messages.scrollHeight;
-
-    try {
-        const response = await fetch(`/api/chat/${day}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message: msg, history: chatHistory})
-        });
-
-        const text = await response.text();
-        if (!response.ok) {
-            throw new Error(text || `Tutor request failed (${response.status})`);
-        }
-
-        chatHistory.push(
-            {role: 'user', content: msg},
-            {role: 'assistant', content: text}
-        );
-
-        const pending = document.getElementById(pendingId);
-        if (pending) {
-            pending.classList.remove('pending');
-            pending.innerHTML = `<small>Tutor</small>${esc(text)}`;
-        }
-    } catch (error) {
-        const pending = document.getElementById(pendingId);
-        if (pending) {
-            pending.classList.remove('pending');
-            pending.classList.add('chatError');
-            pending.innerHTML = `<small>Tutor</small>Sorry, I couldn't answer. ${esc(error.message)}`;
-        }
-        // Restore question after a failed request so it is not lost.
-        input.value = msg;
-    } finally {
-        input.disabled = false;
-        sendButton.disabled = false;
-        input.focus();
-        messages.scrollTop = messages.scrollHeight;
-    }
-}
-
-const chatInput = $('#chatInput');
-const chatSend = $('#chatSend');
-if (chatSend) chatSend.addEventListener('click', sendChat);
-if (chatInput) {
-    chatInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            sendChat();
-        }
+  const input = $('#chatInput');
+  const button = $('#chatSend');
+  const messages = $('#messages');
+  if (!input || !button || !messages) return;
+  const msg = input.value.trim();
+  if (!msg || button.disabled) return;
+  messages.insertAdjacentHTML('beforeend', `<div class="message you"><small>You</small>${esc(msg)}</div>`);
+  messages.scrollTop = messages.scrollHeight;
+  input.value = '';
+  button.disabled = true;
+  const pendingId = `pending-${Date.now()}`;
+  messages.insertAdjacentHTML('beforeend', `<div class="message tutorMsg" id="${pendingId}"><small>Tutor</small>Thinking…</div>`);
+  try {
+    const response = await fetch(`/api/chat/${day}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg, history: chatHistory})
     });
+    const text = await response.text();
+    if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
+    chatHistory.push({role:'user',content:msg},{role:'assistant',content:text});
+    const pending = document.getElementById(pendingId);
+    if (pending) pending.innerHTML = `<small>Tutor</small>${esc(text)}`;
+  } catch (error) {
+    input.value = msg;
+    const pending = document.getElementById(pendingId);
+    if (pending) pending.innerHTML = `<small>Tutor</small>Could not send: ${esc(error.message)}`;
+  } finally {
+    button.disabled = false;
+    input.focus();
+    messages.scrollTop = messages.scrollHeight;
+  }
 }
+const chatSend = $('#chatSend');
+const chatInput = $('#chatInput');
+if (chatSend) chatSend.addEventListener('click', sendChat);
+if (chatInput) chatInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendChat();
+  }
+});
