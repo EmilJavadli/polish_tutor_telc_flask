@@ -225,6 +225,13 @@
         IMPORTANT: load before lesson.js because lesson.js calls
         window.renderTelcListening().
         -->
+        <script 
+            src="{{url_for(
+                'static',
+                filename='js/reading_tab.js'
+            )}}"
+        ></script>
+
         <script
             src="{{ url_for(
                 'static',

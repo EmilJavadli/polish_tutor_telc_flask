@@ -31,7 +31,7 @@ async function loadSummaryProgress(){
  const names={reading:'Reading',listening:'Listening',vocabulary:'Vocabulary',grammar:'Grammar',exercises:'Exercises',writing:'Writing',speaking:'Speaking',quiz:'Quiz'};
  try{const r=await fetch(`/api/lesson/${day}/summary`,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();box.innerHTML=Object.entries(names).map(([key,name])=>{const done=Boolean(data.checklist?.[key]),score=data.scores?.[key];return `<div class="summary-check ${done?'done':''}"><span class="summary-check-icon">${done?'✓':'○'}</span><span>${name}</span>${score!==undefined&&score!==null?`<b>${score}%</b>`:''}</div>`}).join('');const completed=Object.values(data.checklist||{}).filter(Boolean).length;label.textContent=data.completed?'Lesson complete':`${completed}/8 activities complete`;}catch(error){console.error('Summary progress failed',error);label.textContent='Progress unavailable';box.innerHTML='<p class="muted">Progress could not be loaded.</p>';}
 }
-function render(name){if(name==='Reading')panel.innerHTML=`<small class="eyebrow">READING</small>${telcGuide('Reading')}<h2>${esc(lesson.title_pl)}</h2><p class="reading">${esc(lesson.reading_pl)}</p><details><summary>Show translation</summary><p>${esc(lesson.reading_en)}</p></details><div class="reading-audio-actions"><button type="button" class="secondary" id="readAudioSlow">Create slow audio</button><button type="button" class="secondary" id="readAudioNormal">Create normal audio</button></div><audio id="readingAudio" controls></audio><div id="readingAudioError"></div>`;
+function render(name){if(name==='Reading'){window.renderTelcReading(lesson,day,panel,esc)}
 else if(name==='Listening'){window.renderTelcListening(lesson,day,panel,esc)}
 else if(name==='Vocabulary')panel.innerHTML=`<small class="eyebrow">VOCABULARY</small>${telcGuide('Vocabulary')}<h2>Key words</h2><div class="vocab">${lesson.new_vocabulary.map(w=>`<div><b>${esc(w.polish)}</b><span>${esc(w.english)}</span></div>`).join('')}</div>`;
 else if(name==='Grammar')panel.innerHTML=`<small class="eyebrow">GRAMMAR</small>${telcGuide('Grammar')}${lesson.grammar_rules.map(g=>`<div class="grammar-card"><h3>${esc(g.title)}</h3><p>${esc(g.explanation)}</p></div>`).join('')}`;
@@ -86,21 +86,6 @@ async function createLessonAudio(kind, button, playerId, errorId) {
     }
 }
 function wire(name) {
-    const slow = document.getElementById('readAudioSlow');
-    if (slow) {
-        slow.addEventListener('click', () =>
-            createLessonAudio('reading_slow', slow, 'readingAudio', 'readingAudioError')
-        );
-    }
-
-    const normal = document.getElementById('readAudioNormal');
-    if (normal) {
-        normal.addEventListener('click', () =>
-            createLessonAudio('reading_normal', normal, 'readingAudio', 'readingAudioError')
-        );
-    }
-
-
     const w = $('#submitWriting');
     if (w) {
         w.onclick = async () => {
