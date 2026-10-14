@@ -39,6 +39,7 @@ else if(name==='Exercises')choices(lesson.exercises,`/api/lesson/${day}/exercise
 else if(name==='Quiz')choices(lesson.quiz,`/api/lesson/${day}/quiz`,telcGuide('Quiz'));
 else if(name==='Writing')panel.innerHTML=`<small class="eyebrow">WRITING</small>${telcGuide('Writing')}<h2>${esc(lesson.writing_tasks[0].situation_en)}</h2><textarea id="writing"></textarea><button class="primary" id="submitWriting">Get feedback</button><div id="writingResult"></div>`;
 else if(name==='Speaking')panel.innerHTML=`<small class="eyebrow">SPEAKING</small>${telcGuide('Speaking')}<h2>${esc(lesson.speaking.title)}</h2><p>${esc(lesson.speaking.instructions_en)}</p><button class="primary" id="record">Start recording</button><button class="secondary" id="stop" hidden>Stop</button><audio id="preview" controls hidden></audio><button class="primary" id="submitAudio" hidden>Submit recording</button><details><summary>Type instead</summary><textarea id="typedSpeaking"></textarea><button class="primary" id="submitTyped">Submit typed answer</button></details><div id="speakingResult"></div>`;
+else if(name==='Summary')renderSummary();
 wire(name)}
 function choicesInto(root,items,url){let old=panel;panel=root;choices(items,url);panel=old}
 async function createLessonAudio(kind, button, playerId, errorId) {
