@@ -149,6 +149,15 @@ class ExerciseAttempt(BaseModel):
     correct: dict[str, bool]
 
 
+class ReadingAttempt(BaseModel):
+    """Saved result for a reading-comprehension submission."""
+
+    score: float
+    answers: dict[str, str]
+    feedback: dict[str, dict] = Field(default_factory=dict)
+    timestamp: str = ""
+
+
 class ListeningAttempt(BaseModel):
     score: float
     answers: dict[str, str]
