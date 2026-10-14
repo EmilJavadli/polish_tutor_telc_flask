@@ -20,3 +20,43 @@ aside{height:100vh;position:sticky;top:0;padding:24px 16px;background:var(--side
 .typing span:nth-child(2){animation-delay:.18s}
 .typing span:nth-child(3){animation-delay:.36s}
 @keyframes tutor-dot{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+/* Append to static/css/app.css */
+.section-guide {
+    margin: 10px 0 22px;
+    padding: 13px 15px;
+    background: #1b2029;
+    border: 1px solid #2d3440;
+    border-left: 3px solid #dc143c;
+    border-radius: 9px;
+}
+.section-guide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.section-guide-head strong {
+    color: #f3f5f8;
+    font-size: 12px;
+    letter-spacing: .02em;
+}
+.section-guide-head span {
+    padding: 2px 8px;
+    color: #ff7892;
+    background: #35131d;
+    border: 1px solid rgba(220,20,60,.28);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+}
+.section-guide p {
+    margin: 0;
+    color: #adb5c2;
+    font-size: 13px;
+    line-height: 1.55;
+}
+@media (max-width: 720px) {
+    .section-guide { margin-bottom: 18px; padding: 12px 13px; }
+}
