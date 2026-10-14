@@ -89,6 +89,10 @@ def exercises(day):
 @login_required
 def quiz(day):
  _,_,repo,_=repos();l=repo.load_lesson(day);a=grade_quiz(l.quiz,(request.get_json() or {}).get('answers',{}),QUIZ_PASS_SCORE);repo.add_attempt(day,'quiz',a);repo.update_completion(day);return jsonify(payload(a))
+@main.get('/api/lesson/<int:day>/summary')
+@login_required
+def lesson_summary(day):
+ _,_,repo,_=repos();return jsonify(repo.summary(day))
 @main.post('/api/lesson/<int:day>/writing')
 @login_required
 def writing(day):

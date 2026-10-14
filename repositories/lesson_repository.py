@@ -46,6 +46,31 @@ class LessonRepository:
             rows=s.scalars(select(LessonAttempt).where(LessonAttempt.user_id==self.user_id,LessonAttempt.lesson_id==lid,LessonAttempt.attempt_type==kind).order_by(LessonAttempt.attempt_number)).all()
             return [KINDS[kind].model_validate(x.payload) for x in rows]
     def checklist(self,day):return {**{k:bool(self.attempts(day,k)) for k in ('exercises','writing','speaking')},'quiz':any(x.passed for x in self.attempts(day,'quiz'))}
+    def summary(self,day):
+        """Return lesson completion and latest scores for the Summary tab."""
+        listening=self.attempts(day,'listening')
+        exercises=self.attempts(day,'exercises')
+        writing=self.attempts(day,'writing')
+        speaking=self.attempts(day,'speaking')
+        quiz=self.attempts(day,'quiz')
+        return {
+            'completed':self.is_completed(day),
+            'checklist':{
+                'reading':True,
+                'listening':bool(listening),
+                'vocabulary':True,
+                'grammar':True,
+                'exercises':bool(exercises),
+                'writing':bool(writing),
+                'speaking':bool(speaking),
+                'quiz':any(x.passed for x in quiz),
+            },
+            'scores':{
+                'listening':round(listening[-1].score*100) if listening else None,
+                'exercises':round(exercises[-1].score*100) if exercises else None,
+                'quiz':round(quiz[-1].score*100) if quiz else None,
+            },
+        }
     def update_completion(self,day,today=None):
         if not all(self.checklist(day).values()):return False
         with self.sf() as s:x=self._record(s,day);x.status='completed';x.completed_at=dt.datetime.now(dt.timezone.utc);s.commit();return True
