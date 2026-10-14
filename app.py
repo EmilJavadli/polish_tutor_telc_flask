@@ -12,7 +12,7 @@ from repositories.lesson_repository import LessonRepository
 from repositories.evaluation_repository import EvaluationRepository
 from curriculum import get_plan_day,TOTAL_DAYS,recommend_start_position
 from agent.lesson_generator import generate_lesson
-from agent.graders import grade_exercises,grade_listening,grade_quiz,grade_writing,grade_speaking
+from agent.graders import grade_reading,grade_exercises,grade_listening,grade_quiz,grade_writing,grade_speaking
 from agent.llm import transcribe
 from agent.schemas import WritingAttempt,SpeakingAttempt
 from agent.tts import synthesize_speech,synthesize_dialogue
@@ -77,6 +77,10 @@ def lesson_json(day):
 def save_progress(day):
  _,_,repo,_=repos();state=repo.get_progress(day);state.update(request.get_json() or {});repo.save_progress(day,state);return jsonify({'saved':True})
 
+@main.post('/api/lesson/<int:day>/reading')
+@login_required
+def reading(day):
+ _,_,repo,_=repos();l=repo.load_lesson(day);a=grade_reading(l.reading_questions,(request.get_json() or {}).get('answers',{}));repo.add_attempt(day,'reading',a);return jsonify(payload(a))
 @main.post('/api/lesson/<int:day>/listening')
 @login_required
 def listening(day):

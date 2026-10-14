@@ -3,9 +3,9 @@ import uuid
 import datetime as dt
 from pathlib import Path
 from sqlalchemy import select,func
-from agent.schemas import Lesson,QuizAttempt,ExerciseAttempt,ListeningAttempt,WritingAttempt,SpeakingAttempt
+from agent.schemas import Lesson,ReadingAttempt,QuizAttempt,ExerciseAttempt,ListeningAttempt,WritingAttempt,SpeakingAttempt
 from database.models import LessonRecord,LessonAttempt,UserProfile,LessonProgress
-KINDS={'quiz':QuizAttempt,'exercises':ExerciseAttempt,'listening':ListeningAttempt,'writing':WritingAttempt,'speaking':SpeakingAttempt}
+KINDS={'reading':ReadingAttempt,'quiz':QuizAttempt,'exercises':ExerciseAttempt,'listening':ListeningAttempt,'writing':WritingAttempt,'speaking':SpeakingAttempt}
 class LessonRepository:
     def __init__(self,sf,user_id,audio_root=Path('data/audio')):
         self.sf=sf
@@ -48,6 +48,7 @@ class LessonRepository:
     def checklist(self,day):return {**{k:bool(self.attempts(day,k)) for k in ('exercises','writing','speaking')},'quiz':any(x.passed for x in self.attempts(day,'quiz'))}
     def summary(self,day):
         """Return lesson completion and latest scores for the Summary tab."""
+        reading=self.attempts(day,'reading')
         listening=self.attempts(day,'listening')
         exercises=self.attempts(day,'exercises')
         writing=self.attempts(day,'writing')
@@ -56,7 +57,7 @@ class LessonRepository:
         return {
             'completed':self.is_completed(day),
             'checklist':{
-                'reading':True,
+                'reading':bool(reading),
                 'listening':bool(listening),
                 'vocabulary':True,
                 'grammar':True,
@@ -66,6 +67,7 @@ class LessonRepository:
                 'quiz':any(x.passed for x in quiz),
             },
             'scores':{
+                'reading':round(reading[-1].score*100) if reading else None,
                 'listening':round(listening[-1].score*100) if listening else None,
                 'exercises':round(exercises[-1].score*100) if exercises else None,
                 'quiz':round(quiz[-1].score*100) if quiz else None,

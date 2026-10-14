@@ -24,15 +24,24 @@ window.renderTelcReading = function renderTelcReading(lesson, day, panel, esc) {
 
   function words(text) {
     let html = esc(text || '');
-    vocab.forEach((v, i) => {
-      const candidates = [v.form_in_story, v.polish].filter(Boolean).sort((a,b)=>b.length-a.length);
-      for (const word of candidates) {
-        const safe = esc(word);
-        if (!safe) continue;
-        html = html.replace(safe, `<span class="read-word new" data-vocab="${i}">${safe}</span>`);
-        break;
-      }
-    });
+    const entries = vocab
+      .map((v, i) => ({v, i, forms:[v.form_in_story, v.polish].filter(Boolean)}))
+      .flatMap(x => x.forms.map(form => ({...x, form})))
+      .sort((a, b) => b.form.length - a.form.length);
+
+    const placeholders = [];
+    for (const entry of entries) {
+      const safe = esc(entry.form);
+      if (!safe) continue;
+      const escapedPattern = safe.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp(`(^|[^A-Za-zÀ-žĄĆĘŁŃÓŚŹŻąćęłńóśźż])(${escapedPattern})(?=$|[^A-Za-zÀ-žĄĆĘŁŃÓŚŹŻąćęłńóśźż])`, 'giu');
+      html = html.replace(pattern, (match, prefix, word) => {
+        const token = `@@VOCAB_${placeholders.length}@@`;
+        placeholders.push(`<span class="read-word new" data-vocab="${entry.i}">${word}</span>`);
+        return `${prefix}${token}`;
+      });
+    }
+    placeholders.forEach((markup, i) => { html = html.replace(`@@VOCAB_${i}@@`, markup); });
     return html;
   }
 
@@ -55,7 +64,6 @@ window.renderTelcReading = function renderTelcReading(lesson, day, panel, esc) {
           <article class="read-letter"><div class="read-text" id="readText"><p>${words(lesson.reading_pl)}</p><p class="read-translation" id="readTranslationText">${esc(lesson.reading_en)}</p></div></article>
           <div class="read-audio-error" id="readAudioError"></div>
           <audio id="readAudioElement" preload="metadata"></audio>
-          <div class="read-gloss"><h4>KEY VOCABULARY · tap a highlighted word for more</h4><div class="read-gloss-list">${vocab.slice(0,10).map(v=>`<button type="button" class="read-gloss-item"><b>${esc(v.polish)}</b> <span>${esc(v.english)}</span></button>`).join('')}</div></div>
         </section>
         <aside class="read-card read-questions"><div class="read-q-head"><h3>Questions</h3><div class="read-dots" id="readDots"></div></div><div id="readQuestionWrap"></div><div class="read-score" id="readScore"></div></aside>
       </div>
@@ -85,7 +93,7 @@ window.renderTelcReading = function renderTelcReading(lesson, day, panel, esc) {
       $('readQuestionWrap').innerHTML='<div class="read-locked"><b>No reading questions were generated for this lesson.</b><br>The redesigned reader is fully active; add <code>reading_questions</code> to the lesson generator to enable the TELC question pane.</div>';
       $('readNext').disabled=true; $('readBarInfo').textContent='Reading review'; return;
     }
-    $('readQuestionWrap').innerHTML=`<div class="read-q-body">${questions.map((q,qi)=>`<div class="read-q ${state.checked?'locked':''}"><div class="read-q-text"><span>${qi+1}.</span>${esc(q.question||q.q)}</div>${(q.options||q.opts||[]).map((o,oi)=>{let cls='read-opt',mark='';const correct=q.correct_option??q.answer;if(state.checked){if(oi===correct){cls+=' correct';mark='✓'}else if(state.answers[qi]===oi){cls+=' wrong';mark='✕'}}else if(state.answers[qi]===oi)cls+=' selected';return `<button type="button" class="${cls}" data-q="${qi}" data-a="${oi}"><span class="read-key">${'ABC'[oi]||oi+1}</span>${esc(o)}<span class="read-mark">${mark}</span></button>`}).join('')}</div>`).join('')}</div>`;
+    $('readQuestionWrap').innerHTML=`<div class="read-q-body">${questions.map((q,qi)=>`<div class="read-q ${state.checked?'locked':''}"><div class="read-q-text"><span>${qi+1}.</span>${esc(q.question||q.q)}</div>${(q.options||q.opts||[]).map((o,oi)=>{let cls='read-opt',mark='';const correct=q.correct_option??q.answer;if(state.checked){if(oi===correct){cls+=' correct';mark='✓'}else if(state.answers[qi]===oi){cls+=' wrong';mark='✕'}}else if(state.answers[qi]===oi)cls+=' selected';return `<button type="button" class="${cls}" data-q="${qi}" data-a="${oi}"><span class="read-key">${'ABC'[oi]||oi+1}</span>${esc(o)}<span class="read-mark">${mark}</span></button>`}).join('')}${state.checked?`<div class="read-evidence"><b>Evidence:</b> ${esc(q.evidence||'Review the reading text.')}<br><span>${esc(q.explanation||'')}</span></div>`:''}</div>`).join('')}</div>`;
     panel.querySelectorAll('.read-opt').forEach(b=>b.onclick=()=>{if(state.checked)return;state.answers[Number(b.dataset.q)]=Number(b.dataset.a);renderQuestions()});
     $('readNext').textContent='Check answers'; $('readNext').disabled=state.checked||answered<questions.length; $('readBarInfo').textContent=state.checked?'Review the evidence in the text.':`${answered} of ${questions.length} answered`;
   }
@@ -109,7 +117,17 @@ window.renderTelcReading = function renderTelcReading(lesson, day, panel, esc) {
   $('readNewWords').onclick=()=>{$('readNewWords').classList.toggle('on');$('readText').classList.toggle('show-new')};
   panel.querySelectorAll('.read-word').forEach(w=>w.onclick=e=>{const v=vocab[Number(w.dataset.v)];const pop=$('readPop');pop.innerHTML=`<b>${esc(v.polish)}</b><small>${esc(v.part_of_speech||'')}</small><p>${esc(v.english)}</p>${v.why_important?`<em>${esc(v.why_important)}</em>`:''}`;pop.style.display='block';const r=e.target.getBoundingClientRect();pop.style.left=`${Math.min(r.left,innerWidth-260)}px`;pop.style.top=`${r.bottom+8}px`});
   document.addEventListener('click',e=>{if(!e.target.closest('.read-word')&&!e.target.closest('.read-pop'))$('readPop').style.display='none'});
-  $('readNext').onclick=()=>{if(state.step<2)setStep(state.step+1);else if(questions.length){state.checked=true;renderQuestions();const score=state.answers.filter((a,i)=>a===(questions[i].correct_option??questions[i].answer)).length;$('readScore').innerHTML=`<b>${score} / ${questions.length}</b><span>Review the marked answers and return to the relevant passage.</span>`;$('readScore').classList.add('show')}};
+  $('readNext').onclick=async()=>{
+    if(state.step<2){setStep(state.step+1);return;}
+    if(!questions.length)return;
+    const answers=Object.fromEntries(questions.map((q,i)=>[String(q.id),state.answers[i]]));
+    const response=await fetch(`/api/lesson/${day}/reading`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers})});
+    const result=await response.json();
+    if(!response.ok){$('readScore').innerHTML=`<span>Could not check answers: ${esc(result.error||'Request failed')}</span>`;$('readScore').classList.add('show');return;}
+    state.checked=true;renderQuestions();
+    $('readScore').innerHTML=`<b>${Math.round(result.score*100)}%</b><span>Review the marked answers and return to the evidence in the text.</span>`;
+    $('readScore').classList.add('show');
+  };
   $('readReset').onclick=()=>{state.answers.fill(null);state.checked=false;$('readScore').classList.remove('show');setStep(0)};
   setStep(0);
 };

@@ -1,5 +1,14 @@
 from datetime import datetime
-from agent.schemas import ExerciseAttempt,ListeningAttempt,QuizAttempt,ProductionFeedback,Criterion
+from agent.schemas import ReadingAttempt,ExerciseAttempt,ListeningAttempt,QuizAttempt,ProductionFeedback,Criterion
+def grade_reading(tasks,answers):
+ feedback={}
+ correct=0
+ for q in tasks:
+  chosen=answers.get(str(q.id))
+  ok=str(chosen)==str(q.correct_option)
+  correct+=int(ok)
+  feedback[str(q.id)]={'correct':ok,'correct_option':q.correct_option,'explanation':q.explanation,'evidence':q.evidence}
+ return ReadingAttempt(answers=answers,score=correct/max(1,len(tasks)),feedback=feedback,timestamp=datetime.now().isoformat())
 def grade_listening(tasks,answers):
  score=sum(str(answers.get(str(q.id),''))==str(q.correct_option) for q in tasks)/max(1,len(tasks));return ListeningAttempt(answers=answers,score=score,timestamp=datetime.now().isoformat())
 def grade_exercises(items,answers):
