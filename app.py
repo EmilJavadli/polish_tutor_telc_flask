@@ -71,6 +71,19 @@ def generate():
 @login_required
 def lesson_json(day):
  _,_,repo,_=repos();lesson=repo.load_lesson(day);return jsonify(payload(lesson)) if lesson else (jsonify({'error':'not found'}),404)
+@main.post('/api/lesson/<int:day>/regenerate')
+@login_required
+def regenerate_lesson(day):
+ _,_,repo,_=repos()
+ if day < 1 or day > TOTAL_DAYS:return jsonify({'error':'Invalid curriculum day.'}),400
+ plan=get_plan_day(day)
+ try:
+  new_lesson=generate_lesson(plan,repo.taught_words(day),repo.week_words(plan.week,day))
+ except Exception as exc:
+  return jsonify({'error':f'Lesson generation failed: {exc}'}),500
+ repo.prepare_regeneration(day)
+ repo.save_lesson(new_lesson)
+ return jsonify({'ok':True,'lesson':payload(new_lesson)})
 
 @main.post('/api/lesson/<int:day>/progress')
 @login_required

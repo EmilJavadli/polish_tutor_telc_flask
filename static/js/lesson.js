@@ -189,3 +189,48 @@ if (tutorInput) {
         }
     });
 }
+
+
+/* Lesson regeneration */
+const lessonSettingsButton = document.getElementById('lessonSettingsButton');
+const regenerateModal = document.getElementById('regenerateModal');
+const cancelRegenerate = document.getElementById('cancelRegenerate');
+const confirmRegenerate = document.getElementById('confirmRegenerate');
+const regenerateError = document.getElementById('regenerateError');
+
+function closeRegenerateModal(){
+    if (regenerateModal) regenerateModal.hidden = true;
+}
+
+if (lessonSettingsButton && regenerateModal) {
+    lessonSettingsButton.addEventListener('click', () => {
+        if (regenerateError) regenerateError.textContent = '';
+        regenerateModal.hidden = false;
+    });
+}
+if (cancelRegenerate) cancelRegenerate.addEventListener('click', closeRegenerateModal);
+if (regenerateModal) regenerateModal.addEventListener('click', event => {
+    if (event.target === regenerateModal) closeRegenerateModal();
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && regenerateModal && !regenerateModal.hidden) closeRegenerateModal();
+});
+if (confirmRegenerate) {
+    confirmRegenerate.addEventListener('click', async () => {
+        confirmRegenerate.disabled = true;
+        cancelRegenerate.disabled = true;
+        confirmRegenerate.textContent = 'Regenerating…';
+        if (regenerateError) regenerateError.textContent = '';
+        try {
+            const response = await fetch(`/api/lesson/${day}/regenerate`, {method:'POST'});
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+            window.location.reload();
+        } catch (error) {
+            if (regenerateError) regenerateError.textContent = error.message;
+            confirmRegenerate.disabled = false;
+            cancelRegenerate.disabled = false;
+            confirmRegenerate.textContent = 'Regenerate lesson';
+        }
+    });
+}

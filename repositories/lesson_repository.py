@@ -3,9 +3,9 @@ import uuid
 import datetime as dt
 from pathlib import Path
 from sqlalchemy import select,func
-from agent.schemas import Lesson,ReadingAttempt,QuizAttempt,ExerciseAttempt,ListeningAttempt,WritingAttempt,SpeakingAttempt
+from agent.schemas import Lesson,QuizAttempt,ExerciseAttempt,ListeningAttempt,WritingAttempt,SpeakingAttempt
 from database.models import LessonRecord,LessonAttempt,UserProfile,LessonProgress
-KINDS={'reading':ReadingAttempt,'quiz':QuizAttempt,'exercises':ExerciseAttempt,'listening':ListeningAttempt,'writing':WritingAttempt,'speaking':SpeakingAttempt}
+KINDS={'quiz':QuizAttempt,'exercises':ExerciseAttempt,'listening':ListeningAttempt,'writing':WritingAttempt,'speaking':SpeakingAttempt}
 class LessonRepository:
     def __init__(self,sf,user_id,audio_root=Path('data/audio')):
         self.sf=sf
@@ -48,7 +48,6 @@ class LessonRepository:
     def checklist(self,day):return {**{k:bool(self.attempts(day,k)) for k in ('exercises','writing','speaking')},'quiz':any(x.passed for x in self.attempts(day,'quiz'))}
     def summary(self,day):
         """Return lesson completion and latest scores for the Summary tab."""
-        reading=self.attempts(day,'reading')
         listening=self.attempts(day,'listening')
         exercises=self.attempts(day,'exercises')
         writing=self.attempts(day,'writing')
@@ -57,7 +56,7 @@ class LessonRepository:
         return {
             'completed':self.is_completed(day),
             'checklist':{
-                'reading':bool(reading),
+                'reading':True,
                 'listening':bool(listening),
                 'vocabulary':True,
                 'grammar':True,
@@ -67,7 +66,6 @@ class LessonRepository:
                 'quiz':any(x.passed for x in quiz),
             },
             'scores':{
-                'reading':round(reading[-1].score*100) if reading else None,
                 'listening':round(listening[-1].score*100) if listening else None,
                 'exercises':round(exercises[-1].score*100) if exercises else None,
                 'quiz':round(quiz[-1].score*100) if quiz else None,
@@ -83,6 +81,25 @@ class LessonRepository:
             lid=self._lesson_id(s,day)
             if lid:
                 s.query(LessonAttempt).filter(LessonAttempt.user_id==self.user_id,LessonAttempt.lesson_id==lid).delete();x=self._record(s,day);x.status='ready';x.completed_at=None;s.commit()
+    def prepare_regeneration(self,day):
+        """Clear attempts/progress and mark the lesson ready to be replaced."""
+        with self.sf() as s:
+            record=self._record(s,day)
+            if not record:return False
+            lid=record.id
+            s.query(LessonAttempt).filter(
+                LessonAttempt.user_id==self.user_id,
+                LessonAttempt.lesson_id==lid,
+            ).delete(synchronize_session=False)
+            s.query(LessonProgress).filter(
+                LessonProgress.user_id==self.user_id,
+                LessonProgress.lesson_id==lid,
+            ).delete(synchronize_session=False)
+            record.status='ready'
+            record.completed_at=None
+            s.commit()
+        self.delete_audio(day)
+        return True
     def audio_path(self,day,kind):return self.audio_dir/f'day_{day:03d}_{kind}.mp3'
     def delete_audio(self,day):
         for p in self.audio_dir.glob(f'day_{day:03d}_*.mp3'):p.unlink(missing_ok=True)
