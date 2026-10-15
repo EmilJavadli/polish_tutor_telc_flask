@@ -71,19 +71,75 @@ def generate():
 @login_required
 def lesson_json(day):
  _,_,repo,_=repos();lesson=repo.load_lesson(day);return jsonify(payload(lesson)) if lesson else (jsonify({'error':'not found'}),404)
-@main.post('/api/lesson/<int:day>/regenerate')
+@main.post("/api/lesson/<int:day>/regenerate")
 @login_required
-def regenerate_lesson(day):
- _,_,repo,_=repos()
- if day < 1 or day > TOTAL_DAYS:return jsonify({'error':'Invalid curriculum day.'}),400
- plan=get_plan_day(day)
- try:
-  new_lesson=generate_lesson(plan,repo.taught_words(day),repo.week_words(plan.week,day))
- except Exception as exc:
-  return jsonify({'error':f'Lesson generation failed: {exc}'}),500
- repo.prepare_regeneration(day)
- repo.save_lesson(new_lesson)
- return jsonify({'ok':True,'lesson':payload(new_lesson)})
+def regenerate_lesson(day: int):
+    """Safely generate and replace a single lesson.
+
+    The existing lesson is preserved unless a complete replacement has been
+    successfully generated and validated.
+    """
+    _, _, repository, _ = repos()
+
+    if not 1 <= day <= TOTAL_DAYS:
+        return jsonify({"ok": False, "error": "Invalid curriculum day."}), 400
+
+    plan = get_plan_day(day)
+
+    try:
+        known_words = repository.taught_words(exclude_day=day)
+        week_words = repository.week_words(
+            plan.week,
+            exclude_day=day,
+        )
+
+        new_lesson = generate_lesson(
+            plan,
+            known_words=known_words,
+            week_words=week_words,
+        )
+    except Exception as exc:
+        app.logger.exception(
+            "Lesson regeneration failed for user lesson day %s",
+            day,
+        )
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "Lesson generation failed.",
+                    "details": str(exc),
+                }
+            ),
+            500,
+        )
+
+    try:
+        repository.prepare_regeneration(day)
+        repository.save_lesson(new_lesson)
+    except Exception as exc:
+        app.logger.exception(
+            "Saving regenerated lesson failed for day %s",
+            day,
+        )
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": "The lesson was generated but could not be saved.",
+                    "details": str(exc),
+                }
+            ),
+            500,
+        )
+
+    return jsonify(
+        {
+            "ok": True,
+            "day": day,
+        }
+    )
+
 
 @main.post('/api/lesson/<int:day>/progress')
 @login_required

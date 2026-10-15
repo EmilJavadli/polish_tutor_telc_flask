@@ -192,45 +192,116 @@ if (tutorInput) {
 
 
 /* Lesson regeneration */
-const lessonSettingsButton = document.getElementById('lessonSettingsButton');
-const regenerateModal = document.getElementById('regenerateModal');
-const cancelRegenerate = document.getElementById('cancelRegenerate');
-const confirmRegenerate = document.getElementById('confirmRegenerate');
-const regenerateError = document.getElementById('regenerateError');
+const lessonSettingsButton = document.getElementById("lessonSettingsButton");
+const regenerateModal = document.getElementById("regenerateModal");
+const cancelRegenerateButton = document.getElementById("cancelRegenerate");
+const confirmRegenerateButton = document.getElementById("confirmRegenerate");
+const regenerateError = document.getElementById("regenerateError");
 
-function closeRegenerateModal(){
-    if (regenerateModal) regenerateModal.hidden = true;
+function closeRegenerateModal() {
+    if (regenerateModal) {
+        regenerateModal.hidden = true;
+    }
+}
+
+async function parseApiResponse(response) {
+    const contentType = response.headers.get("content-type") || "";
+    const bodyText = await response.text();
+
+    if (!contentType.includes("application/json")) {
+        console.error("Non-JSON regeneration response:", bodyText);
+        throw new Error(
+            `Server returned HTTP ${response.status} instead of JSON. ` +
+            "Check the Render logs for the regeneration traceback."
+        );
+    }
+
+    try {
+        return JSON.parse(bodyText);
+    } catch (error) {
+        console.error("Invalid regeneration JSON:", bodyText);
+        throw new Error("The regeneration endpoint returned invalid JSON.");
+    }
 }
 
 if (lessonSettingsButton && regenerateModal) {
-    lessonSettingsButton.addEventListener('click', () => {
-        if (regenerateError) regenerateError.textContent = '';
+    lessonSettingsButton.addEventListener("click", () => {
+        if (regenerateError) {
+            regenerateError.textContent = "";
+        }
         regenerateModal.hidden = false;
     });
 }
-if (cancelRegenerate) cancelRegenerate.addEventListener('click', closeRegenerateModal);
-if (regenerateModal) regenerateModal.addEventListener('click', event => {
-    if (event.target === regenerateModal) closeRegenerateModal();
+
+if (cancelRegenerateButton) {
+    cancelRegenerateButton.addEventListener("click", closeRegenerateModal);
+}
+
+if (regenerateModal) {
+    regenerateModal.addEventListener("click", (event) => {
+        if (event.target === regenerateModal) {
+            closeRegenerateModal();
+        }
+    });
+}
+
+document.addEventListener("keydown", (event) => {
+    if (
+        event.key === "Escape" &&
+        regenerateModal &&
+        !regenerateModal.hidden
+    ) {
+        closeRegenerateModal();
+    }
 });
-document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && regenerateModal && !regenerateModal.hidden) closeRegenerateModal();
-});
-if (confirmRegenerate) {
-    confirmRegenerate.addEventListener('click', async () => {
-        confirmRegenerate.disabled = true;
-        cancelRegenerate.disabled = true;
-        confirmRegenerate.textContent = 'Regenerating…';
-        if (regenerateError) regenerateError.textContent = '';
+
+if (confirmRegenerateButton) {
+    confirmRegenerateButton.addEventListener("click", async () => {
+        confirmRegenerateButton.disabled = true;
+        if (cancelRegenerateButton) {
+            cancelRegenerateButton.disabled = true;
+        }
+        confirmRegenerateButton.textContent = "Regenerating…";
+
+        if (regenerateError) {
+            regenerateError.textContent = "";
+        }
+
         try {
-            const response = await fetch(`/api/lesson/${day}/regenerate`, {method:'POST'});
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+            const response = await fetch(
+                `/api/lesson/${day}/regenerate`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                    },
+                }
+            );
+
+            const data = await parseApiResponse(response);
+
+            if (!response.ok || !data.ok) {
+                const message = [data.error, data.details]
+                    .filter(Boolean)
+                    .join(" ");
+                throw new Error(
+                    message || `Regeneration failed with HTTP ${response.status}.`
+                );
+            }
+
             window.location.reload();
         } catch (error) {
-            if (regenerateError) regenerateError.textContent = error.message;
-            confirmRegenerate.disabled = false;
-            cancelRegenerate.disabled = false;
-            confirmRegenerate.textContent = 'Regenerate lesson';
+            console.error("Lesson regeneration failed:", error);
+
+            if (regenerateError) {
+                regenerateError.textContent = error.message;
+            }
+
+            confirmRegenerateButton.disabled = false;
+            if (cancelRegenerateButton) {
+                cancelRegenerateButton.disabled = false;
+            }
+            confirmRegenerateButton.textContent = "Regenerate lesson";
         }
     });
 }
