@@ -213,11 +213,6 @@ input[type="search"] {
   border-radius: 8px;
   margin-top: 24px;
 }
-.footer {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 20px;
-}
 dialog {
   background: var(--panel);
   color: inherit;
@@ -288,8 +283,15 @@ progress {
   min-width: 0;
 }
 main {
-  padding: 0;
+  padding: 24px;
   max-width: none;
+}
+main > .tip {
+  margin: 0 0 24px;
+}
+@media (max-width: 800px) {
+  main { padding: 16px; }
+  main > .tip { margin-bottom: 20px; }
 }
 header h1 {
   letter-spacing: normal;
@@ -319,10 +321,7 @@ dialog {
 .save-button {
   margin-top: 10px;
 }
-.footer {
-  line-height: 1.6;
-}
-</style><main><header><div><div class="eyebrow">YOUR DAILY POLISH · <span id="vocabLevel"></span></div><h1>Words for real life.</h1><div class="muted">Learn the expression. Remember the meaning. Make it yours.</div></div><button class="primary" id="start">Start flashcards →</button></header><div class="stats"><div class="stat"><b id="total"></b><small>Lesson words</small></div><div class="stat"><b id="learning"></b><small>Learning</small></div><div class="stat"><b id="known"></b><small>Marked known</small></div></div><div class="tools"><input aria-label="Search vocabulary" id="search" placeholder="Search in Polish or English..." type="search"/><select aria-label="Filter by status" id="filter"><option value="all">All words</option><option>New</option><option>Learning</option><option>Known</option></select><button id="hide">Hide meanings</button></div><div class="layout"><section aria-label="Vocabulary words" class="panel list" id="list"></section><section aria-label="Selected word details" class="panel detail" id="detail"></section></div><div class="tip"><b>A little practice, not just a word list.</b><br/><span class="muted">Read the phrase aloud, hide its meaning, then write one sentence about your day.</span></div><div class="footer">Progress and personal sentences are saved in this browser when storage is available, separately for your account and lesson. Pronunciation uses the device voice, if supported.</div></main><dialog id="review" aria-label="Vocabulary flashcards"><button aria-label="Close flashcards" class="close" id="close">✕</button><small id="counter"></small><progress id="progress"></progress><div class="flash" id="flash"></div></dialog>`;
+</style><main><section class="tip" aria-label="TELC preparation strategy"><b>TELC preparation strategy</b><br/><span class="muted">Read the phrase aloud, hide its meaning, then write one sentence about your day.</span></section><header><div><div class="eyebrow">YOUR DAILY POLISH · <span id="vocabLevel"></span></div><h1>Words for real life.</h1><div class="muted">Learn the expression. Remember the meaning. Make it yours.</div></div><button class="primary" id="start">Start flashcards →</button></header><div class="stats"><div class="stat"><b id="total"></b><small>Lesson words</small></div><div class="stat"><b id="learning"></b><small>Learning</small></div><div class="stat"><b id="known"></b><small>Marked known</small></div></div><div class="tools"><input aria-label="Search vocabulary" id="search" placeholder="Search in Polish or English..." type="search"/><select aria-label="Filter by status" id="filter"><option value="all">All words</option><option>New</option><option>Learning</option><option>Known</option></select><button id="hide">Hide meanings</button></div><div class="layout"><section aria-label="Vocabulary words" class="panel list" id="list"></section><section aria-label="Selected word details" class="panel detail" id="detail"></section></div></main><dialog id="review" aria-label="Vocabulary flashcards"><button aria-label="Close flashcards" class="close" id="close">✕</button><small id="counter"></small><progress id="progress"></progress><div class="flash" id="flash"></div></dialog>`;
   shadow.getElementById("vocabLevel").textContent = lesson.level || "A1";
   const vocabulary = Array.isArray(lesson.new_vocabulary)
     ? lesson.new_vocabulary
