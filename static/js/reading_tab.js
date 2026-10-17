@@ -249,9 +249,16 @@ window.renderTelcReading = function renderTelcReading(lesson, day, panel, esc) {
         pop.style.top = `${r.bottom + 8}px`;
       }),
   );
+  // This document listener can run after another tab replaces the reader.
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".read-word") && !e.target.closest(".read-pop"))
-      $("readPop").style.display = "none";
+    const popover = panel.querySelector("#readPop");
+    if (
+      popover &&
+      !e.target.closest(".read-word") &&
+      !e.target.closest(".read-pop")
+    ) {
+      popover.style.display = "none";
+    }
   });
   $("readNext").onclick = async () => {
     if (state.step < 2) {

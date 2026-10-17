@@ -159,13 +159,20 @@ async function loadSummaryProgress() {
   }
 }
 function render(name) {
+  // Stop vocabulary pronunciation when leaving its tab.
+  if (
+    panel.querySelector(".lesson-vocabulary-host") &&
+    "speechSynthesis" in window
+  ) {
+    window.speechSynthesis.cancel();
+  }
   if (name === "Reading") {
     window.renderTelcReading(lesson, day, panel, esc);
   } else if (name === "Listening") {
     window.renderTelcListening(lesson, day, panel, esc);
-  } else if (name === "Vocabulary")
-    panel.innerHTML = `<small class="eyebrow">VOCABULARY</small>${telcGuide("Vocabulary")}<h2>Key words</h2><div class="vocab">${lesson.new_vocabulary.map((w) => `<div><b>${esc(w.polish)}</b><span>${esc(w.english)}</span></div>`).join("")}</div>`;
-  else if (name === "Grammar")
+  } else if (name === "Vocabulary") {
+    window.renderLessonVocabulary(lesson, day, panel);
+  } else if (name === "Grammar")
     panel.innerHTML = `<small class="eyebrow">GRAMMAR</small>${telcGuide("Grammar")}${lesson.grammar_rules.map((g) => `<div class="grammar-card"><h3>${esc(g.title)}</h3><p>${esc(g.explanation)}</p></div>`).join("")}`;
   else if (name === "Exercises")
     choices(

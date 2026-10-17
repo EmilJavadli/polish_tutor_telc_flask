@@ -131,7 +131,7 @@
             <!-- JavaScript renders the selected lesson section here -->
             <div
                 class="panel"
-                id="lessonPanel"
+                id="lessonPanel" data-vocabulary-user="{{ user.id }}"
             ></div>
 
 
@@ -271,7 +271,9 @@
             ) }}"
         ></script>
 
-        <!-- Main lesson interactions -->
+        <!-- Vocabulary design component, loaded before lesson.js. -->
+    <script src="{{ url_for('static', filename='js/vocabulary_tab.js') }}"></script>
+    <!-- Main lesson interactions -->
         <script
             src="{{ url_for(
                 'static',
