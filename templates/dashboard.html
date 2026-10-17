@@ -1,7 +1,110 @@
-{% extends 'base.html' %}{% block body %}<div class="shell"><aside>{% include '_sidebar.html' %}</aside><main>
-<div class="topbar"><div><small class="eyebrow">Dashboard</small><h1>Cześć, {{user.display_name or 'learner'}}!</h1><p class="muted">Your personalized path toward TELC Polski B1.</p></div><a class="primary" href="{{url_for('main.lesson_page')}}">Continue today's lesson →</a></div>
-<div class="kpis"><div class="kpi"><small>Current level</small><b>{{profile.current_cefr_level}}</b><span class="muted">Target {{profile.target_cefr_level}}</span></div><div class="kpi"><small>Completed</small><b>{{stats.lessons}}</b><span class="muted">lessons</span></div><div class="kpi"><small>Words learned</small><b>{{stats.words}}</b><span class="muted">tracked vocabulary</span></div><div class="kpi"><small>Current day</small><b>{{current_day}}</b><span class="muted">of {{total_days}}</span></div></div>
-<div class="hero"><div><small class="eyebrow">Today's learning</small><h2>Day {{current_day}} · Continue your Polish journey</h2><p>Reading, listening, vocabulary, grammar, writing, speaking and quiz.</p><a class="primary" href="{{url_for('main.lesson_page')}}">Open lesson</a></div><div class="progress-number">{{((current_day/total_days)*100)|round|int}}%</div></div>
-<div class="dashboard-grid"><section class="card"><div class="card-title"><h3>CEFR skill profile</h3><small>Placement evidence</small></div><div class="skills">{% set colors={'reading':'#4f7df3','listening':'#8b5cf6','grammar_vocab':'#dc143c','writing':'#13a3b8','speaking':'#f0783c'} %}{% set levels={'A0':8,'A1':30,'A2':58,'B1':82} %}{% for skill,evidence in skills.items() %}{% set level=evidence.level if evidence is mapping else 'A1' %}<div><div class="skill-head"><span>{{skill|replace('_',' ')|title}}</span><b>{{level}}</b></div><div class="skill-track"><div class="skill-fill" style="width:{{levels.get(level,10)}}%;background:{{colors.get(skill,'#dc143c')}}"></div></div></div>{% else %}<p class="muted">Complete placement to build your skill profile.</p>{% endfor %}</div></section>
-<section class="card"><div class="card-title"><h3>9-month TELC journey</h3><small>{{((current_day/total_days)*100)|round|int}}% complete</small></div><div class="timeline">{% for m in range(1,10) %}<div class="month {% if m < ((current_day-1)//30+1) %}done{% elif m == ((current_day-1)//30+1) %}current{% endif %}"><i>{% if m < ((current_day-1)//30+1) %}✓{% else %}{{m}}{% endif %}</i>M{{m}}</div>{% endfor %}</div><div class="today-list"><div class="today-item"><span>Current curriculum position</span><span>Day {{current_day}}</span></div><div class="today-item"><span>Daily learning target</span><span>{{profile.daily_study_minutes}} min</span></div><div class="today-item"><span>Grammar mastered</span><span>{{stats.grammar}}</span></div></div></section></div>
-</main><nav class="mobile-nav"><a href="{{url_for('main.dashboard')}}"><b>⌂</b>Home</a><a href="{{url_for('main.lesson_page')}}"><b>▤</b>Lesson</a><a href="{{url_for('main.placement')}}"><b>◎</b>Level</a></nav></div>{% endblock %}
+{% extends 'base.html' %}{% block body %}
+  <div class="shell">
+    <aside>{% include '_sidebar.html' %}</aside>
+    <main>
+      <div class="topbar">
+        <div>
+          <small class="eyebrow">Dashboard</small>
+          <h1>Cześć, {{ user.display_name or 'learner' }}!</h1>
+          <p class="muted">Your personalized path toward TELC Polski B1.</p>
+        </div>
+        <a class="primary" href="{{ url_for('main.lesson_page') }}"
+          >Continue today's lesson →</a
+        >
+      </div>
+      <div class="kpis">
+        <div class="kpi">
+          <small>Current level</small><b>{{ profile.current_cefr_level }}</b
+          ><span class="muted">Target {{ profile.target_cefr_level }}</span>
+        </div>
+        <div class="kpi">
+          <small>Completed</small><b>{{ stats.lessons }}</b
+          ><span class="muted">lessons</span>
+        </div>
+        <div class="kpi">
+          <small>Words learned</small><b>{{ stats.words }}</b
+          ><span class="muted">tracked vocabulary</span>
+        </div>
+        <div class="kpi">
+          <small>Current day</small><b>{{ current_day }}</b
+          ><span class="muted">of {{ total_days }}</span>
+        </div>
+      </div>
+      <div class="hero">
+        <div>
+          <small class="eyebrow">Today's learning</small>
+          <h2>Day {{ current_day }} · Continue your Polish journey</h2>
+          <p>
+            Reading, listening, vocabulary, grammar, writing, speaking and quiz.
+          </p>
+          <a class="primary" href="{{ url_for('main.lesson_page') }}"
+            >Open lesson</a
+          >
+        </div>
+        <div class="progress-number">
+          {{ ((current_day/total_days)*100)|round|int }}%
+        </div>
+      </div>
+      <div class="dashboard-grid">
+        <section class="card">
+          <div class="card-title">
+            <h3>CEFR skill profile</h3>
+            <small>Placement evidence</small>
+          </div>
+          <div class="skills">
+            {% set colors={'reading':'#4f7df3','listening':'#8b5cf6','grammar_vocab':'#dc143c','writing':'#13a3b8','speaking':'#f0783c'} %}{% set levels={'A0':8,'A1':30,'A2':58,'B1':82} %}{% for skill,evidence in skills.items() %}{% set level=evidence.level if evidence is mapping else 'A1' %}
+            <div>
+              <div class="skill-head">
+                <span>{{ skill|replace('_',' ')|title }}</span
+                ><b>{{ level }}</b>
+              </div>
+              <div class="skill-track">
+                <div
+                  class="skill-fill"
+                  style="width:{{ levels.get(level,10) }}%;background:{{ colors.get(skill,'#dc143c') }}"
+                ></div>
+              </div>
+            </div>{% else %}<p class="muted">
+              Complete placement to build your skill profile.
+            </p>{% endfor %}
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-title">
+            <h3>9-month TELC journey</h3>
+            <small
+              >{{ ((current_day/total_days)*100)|round|int }}% complete</small
+            >
+          </div>
+          <div class="timeline">
+            {% for m in range(1,10) %}<div
+              class="month {% if m < ((current_day-1)//30+1) %}done{% elif m == ((current_day-1)//30+1) %}current{% endif %}"
+            >
+              <i
+                >{% if m < ((current_day-1)//30+1) %}✓{% else %}{{ m }}{% endif %}</i
+              >M{{ m }}
+            </div>{% endfor %}
+          </div>
+          <div class="today-list">
+            <div class="today-item">
+              <span>Current curriculum position</span
+              ><span>Day {{ current_day }}</span>
+            </div>
+            <div class="today-item">
+              <span>Daily learning target</span
+              ><span>{{ profile.daily_study_minutes }} min</span>
+            </div>
+            <div class="today-item">
+              <span>Grammar mastered</span><span>{{ stats.grammar }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <nav class="mobile-nav">
+      <a href="{{ url_for('main.dashboard') }}"><b>⌂</b>Home</a
+      ><a href="{{ url_for('main.lesson_page') }}"><b>▤</b>Lesson</a
+      ><a href="{{ url_for('main.placement') }}"><b>◎</b>Level</a>
+    </nav>
+  </div>
+{% endblock %}

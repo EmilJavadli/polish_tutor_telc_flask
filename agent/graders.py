@@ -65,8 +65,7 @@ def grade_listening(tasks: list, answers: dict) -> ListeningAttempt:
     """Grade objective Listening questions."""
     correct = {
         str(question.id): (
-            str(answers.get(str(question.id), ""))
-            == str(question.correct_option)
+            str(answers.get(str(question.id), "")) == str(question.correct_option)
         )
         for question in tasks
     }
@@ -90,8 +89,7 @@ def grade_exercises(items: list, answers: dict) -> ExerciseAttempt:
             is_correct = answer == str(exercise.correct_option)
         else:
             accepted = {
-                candidate.strip().casefold()
-                for candidate in exercise.accepted_answers
+                candidate.strip().casefold() for candidate in exercise.accepted_answers
             }
             is_correct = answer.casefold() in accepted
 
@@ -121,8 +119,7 @@ def grade_quiz(
             item_score = float(answer == str(question.correct_option))
         elif question.type == "fill_blank":
             accepted = {
-                candidate.strip().casefold()
-                for candidate in question.accepted_answers
+                candidate.strip().casefold() for candidate in question.accepted_answers
             }
             item_score = float(answer.casefold() in accepted)
         else:
@@ -179,11 +176,7 @@ def _grade_production(
 
     for expected_name in criteria:
         matching = next(
-            (
-                item
-                for item in returned_criteria
-                if item.get("name") == expected_name
-            ),
+            (item for item in returned_criteria if item.get("name") == expected_name),
             None,
         )
 
@@ -205,10 +198,7 @@ def _grade_production(
             )
         )
 
-    mistakes = [
-        Mistake.model_validate(item)
-        for item in response.get("mistakes", [])
-    ]
+    mistakes = [Mistake.model_validate(item) for item in response.get("mistakes", [])]
 
     return ProductionFeedback(
         criteria=normalized_criteria,

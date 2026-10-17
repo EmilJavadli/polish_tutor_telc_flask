@@ -1,3 +1,5 @@
+"""Prompt templates and safe placeholder substitution."""
+
 LEARNER_PROFILE = """
 Adult learner in Poland preparing for Polish TELC B1 Exam.
 Explain in English.
@@ -9,6 +11,7 @@ def fill(template: str, **values) -> str:
     """Replace <<key>> placeholders in a template with provided values."""
     for key, value in values.items():
         template = template.replace(f"&lt;&lt;{key}&gt;&gt;", str(value))
+        template = template.replace(f"<<{key}>>", str(value))
 
     return template
 

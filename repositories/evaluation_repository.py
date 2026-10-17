@@ -1,10 +1,14 @@
-import uuid
 """Persistence for initial placement tests and optional placement retakes."""
+
+import uuid
 from datetime import datetime, timezone
-from sqlalchemy import select, update
-from config import PLACEMENT_VERSION
+
 from database.models import PlacementEvaluation, StudyPlan, UserProfile
+from sqlalchemy import select, update
+
+from config import PLACEMENT_VERSION
 from curriculum import recommend_start_position
+
 
 class EvaluationRepository:
     def __init__(self, session_factory, user_id):
@@ -13,24 +17,36 @@ class EvaluationRepository:
 
     def current(self):
         with self.session_factory() as session:
-            return session.scalar(select(PlacementEvaluation).where(
-                PlacementEvaluation.user_id == self.user_id,
-                PlacementEvaluation.status == "in_progress",
-            ).order_by(PlacementEvaluation.started_at.desc()))
+            return session.scalar(
+                select(PlacementEvaluation)
+                .where(
+                    PlacementEvaluation.user_id == self.user_id,
+                    PlacementEvaluation.status == "in_progress",
+                )
+                .order_by(PlacementEvaluation.started_at.desc())
+            )
 
     def pending_review(self):
         with self.session_factory() as session:
-            return session.scalar(select(PlacementEvaluation).where(
-                PlacementEvaluation.user_id == self.user_id,
-                PlacementEvaluation.status == "pending_review",
-            ).order_by(PlacementEvaluation.completed_at.desc()))
+            return session.scalar(
+                select(PlacementEvaluation)
+                .where(
+                    PlacementEvaluation.user_id == self.user_id,
+                    PlacementEvaluation.status == "pending_review",
+                )
+                .order_by(PlacementEvaluation.completed_at.desc())
+            )
 
     def latest_completed(self):
         with self.session_factory() as session:
-            return session.scalar(select(PlacementEvaluation).where(
-                PlacementEvaluation.user_id == self.user_id,
-                PlacementEvaluation.status == "completed",
-            ).order_by(PlacementEvaluation.completed_at.desc()))
+            return session.scalar(
+                select(PlacementEvaluation)
+                .where(
+                    PlacementEvaluation.user_id == self.user_id,
+                    PlacementEvaluation.status == "completed",
+                )
+                .order_by(PlacementEvaluation.completed_at.desc())
+            )
 
     def get_or_create(self, *, mode="initial"):
         current = self.current()
@@ -95,10 +111,14 @@ class EvaluationRepository:
             recommended_start = recommendation["day"]
             # Never move a returning learner backwards or delete completed work.
             start_day = max(profile.current_plan_position or 1, recommended_start)
-            session.execute(update(StudyPlan).where(
-                StudyPlan.user_id == self.user_id,
-                StudyPlan.status == "active",
-            ).values(status="replaced"))
+            session.execute(
+                update(StudyPlan)
+                .where(
+                    StudyPlan.user_id == self.user_id,
+                    StudyPlan.status == "active",
+                )
+                .values(status="replaced")
+            )
             scores = dict(evaluation.scores or {})
             plan = StudyPlan(
                 user_id=self.user_id,
@@ -146,10 +166,14 @@ class EvaluationRepository:
 
     def cancel_in_progress(self):
         with self.session_factory() as session:
-            evaluation = session.scalar(select(PlacementEvaluation).where(
-                PlacementEvaluation.user_id == self.user_id,
-                PlacementEvaluation.status == "in_progress",
-            ).order_by(PlacementEvaluation.started_at.desc()))
+            evaluation = session.scalar(
+                select(PlacementEvaluation)
+                .where(
+                    PlacementEvaluation.user_id == self.user_id,
+                    PlacementEvaluation.status == "in_progress",
+                )
+                .order_by(PlacementEvaluation.started_at.desc())
+            )
             if evaluation is not None:
                 evaluation.status = "abandoned"
                 session.commit()

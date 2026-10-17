@@ -1,4 +1,5 @@
 """Pydantic models for lessons and attempts."""
+
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -47,6 +48,8 @@ class Listening(BaseModel):
     instruction_pl: str = ""
     lines: list[DialogueLine]
     tasks: list[ChoiceTask]
+
+
 class ReadingQuestion(BaseModel):
     id: int
     type: Literal["multiple_choice", "true_false"] = "multiple_choice"
@@ -178,6 +181,7 @@ class Mistake(BaseModel):
 
 class ProductionFeedback(BaseModel):
     """Feedback on a written or spoken answer (4 criteria x 5 points = 20)."""
+
     criteria: list[Criterion]
     corrected_text: str = ""
     mistakes: list[Mistake] = Field(default_factory=list)

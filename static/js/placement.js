@@ -1,1 +1,65 @@
-let idx=0,steps=[...document.querySelectorAll('.step')],answers={grammar_vocab:{},reading:{},listening:{}};const renderItems=(root,items,key)=>{root.innerHTML=items.map(q=>`<div class="question"><b>${q.q}</b>${q.options.map((o,i)=>`<button data-id="${q.id}" data-a="${i}">${o}</button>`).join('')}</div>`).join('');root.querySelectorAll('button').forEach(b=>b.onclick=()=>{root.querySelectorAll(`[data-id="${b.dataset.id}"]`).forEach(x=>x.classList.remove('selected'));b.classList.add('selected');answers[key][b.dataset.id]=String(b.dataset.a)})};renderItems(document.querySelector('#grammarItems'),PLACEMENT.grammar,'grammar_vocab');renderItems(document.querySelector('#readingItems'),PLACEMENT.reading,'reading');renderItems(document.querySelector('#listeningItems'),PLACEMENT.listening,'listening');document.querySelectorAll('.next').forEach(b=>b.onclick=()=>{steps[idx].classList.remove('active');steps[++idx].classList.add('active')});document.querySelector('#finishPlacement').onclick=async()=>{let body={responses:answers,writing:document.querySelector('#placementWriting').value,speaking:document.querySelector('#placementSpeaking').value,daily_minutes:60};let r=await fetch('/api/placement/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),j=await r.json();steps[idx].classList.remove('active');steps[++idx].classList.add('active');document.querySelector('#placementResult').innerHTML=`<div class="result"><h3>${j.level}</h3><p>Recommended start: day ${j.start_day}</p><p>${Object.entries(j.skill_levels||{}).map(([k,v])=>`${k}: ${v}`).join('<br>')}</p></div>`}
+let idx = 0,
+  steps = [...document.querySelectorAll(".step")],
+  answers = { grammar_vocab: {}, reading: {}, listening: {} };
+const renderItems = (root, items, key) => {
+  root.innerHTML = items
+    .map(
+      (q) =>
+        `<div class="question"><b>${q.q}</b>${q.options.map((o, i) => `<button data-id="${q.id}" data-a="${i}">${o}</button>`).join("")}</div>`,
+    )
+    .join("");
+  root.querySelectorAll("button").forEach(
+    (b) =>
+      (b.onclick = () => {
+        root
+          .querySelectorAll(`[data-id="${b.dataset.id}"]`)
+          .forEach((x) => x.classList.remove("selected"));
+        b.classList.add("selected");
+        answers[key][b.dataset.id] = String(b.dataset.a);
+      }),
+  );
+};
+renderItems(
+  document.querySelector("#grammarItems"),
+  PLACEMENT.grammar,
+  "grammar_vocab",
+);
+renderItems(
+  document.querySelector("#readingItems"),
+  PLACEMENT.reading,
+  "reading",
+);
+renderItems(
+  document.querySelector("#listeningItems"),
+  PLACEMENT.listening,
+  "listening",
+);
+document.querySelectorAll(".next").forEach(
+  (b) =>
+    (b.onclick = () => {
+      steps[idx].classList.remove("active");
+      steps[++idx].classList.add("active");
+    }),
+);
+document.querySelector("#finishPlacement").onclick = async () => {
+  let body = {
+    responses: answers,
+    writing: document.querySelector("#placementWriting").value,
+    speaking: document.querySelector("#placementSpeaking").value,
+    daily_minutes: 60,
+  };
+  let r = await fetch("/api/placement/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+    j = await r.json();
+  steps[idx].classList.remove("active");
+  steps[++idx].classList.add("active");
+  document.querySelector("#placementResult").innerHTML =
+    `<div class="result"><h3>${j.level}</h3><p>Recommended start: day ${j.start_day}</p><p>${Object.entries(
+      j.skill_levels || {},
+    )
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("<br>")}</p></div>`;
+};

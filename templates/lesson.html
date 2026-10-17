@@ -35,17 +35,6 @@
                     }}
                 </p>
             </div>
-            {% if lesson %}
-                <button
-                    type="button"
-                    class="lesson-settings-btn"
-                    id="lessonSettingsButton"
-                    aria-label="Lesson settings"
-                    title="Lesson settings"
-                >
-                    ⋯
-                </button>
-            {% endif %}
         </div>
 
 
@@ -125,13 +114,13 @@
                     <p>
                         A new lesson will replace Day {{ day }}. Existing Reading, Listening,
                         exercise, Writing, Speaking and Quiz attempts for this lesson will be
-                        cleared, along with generated lesson audio.
+                        cleared only after the replacement is successfully saved. Audio will be recreated for the new content.
                     </p>
                     <p class="lesson-modal-note">
                         Use this after lesson-generation improvements, or when the generated
                         lesson needs to be replaced.
                     </p>
-                    <div class="lesson-modal-error" id="regenerateError"></div>
+                    <div class="lesson-modal-error" id="regenerateError" role="alert" aria-live="polite"></div>
                     <div class="lesson-modal-actions">
                         <button type="button" class="secondary" id="cancelRegenerate">Cancel</button>
                         <button type="button" class="danger-button" id="confirmRegenerate">Regenerate lesson</button>
@@ -146,6 +135,16 @@
             ></div>
 
 
+            <footer class="lesson-tools">
+                <div>
+                    <strong>Need a fresh lesson?</strong>
+                    <p>Replace this lesson only if its content needs to change.</p>
+                </div>
+                <button type="button" class="secondary" id="lessonSettingsButton"
+                        aria-haspopup="dialog" aria-controls="regenerateModal">
+                    Regenerate lesson
+                </button>
+            </footer>
             <!-- Lesson data passed safely from Flask to JavaScript -->
             <script
                 id="lessonData"

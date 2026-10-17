@@ -1,5 +1,17 @@
-<div class="brand"><div class="flag"></div><b>Polski Tutor</b></div>
-<a class="nav active" href="{{url_for('main.dashboard')}}">▦ &nbsp; Dashboard</a>
-<a class="nav" href="{{url_for('main.lesson_page')}}">▤ &nbsp; Current lesson</a>
-<a class="nav" href="{{url_for('main.placement')}}">◎ &nbsp; Placement</a>
-<div class="side-user"><b>{{user.display_name or user.email}}</b><small>{{profile.current_cefr_level}} → {{profile.target_cefr_level}}</small><a href="{{url_for('auth.logout')}}">Sign out</a></div>
+<div class="brand">
+  <div class="flag"></div>
+  <b>Polski Tutor</b>
+</div>
+<a class="nav active" href="{{ url_for('main.dashboard') }}"
+  >▦ &nbsp; Dashboard</a
+>
+<a class="nav" href="{{ url_for('main.lesson_page') }}"
+  >▤ &nbsp; Current lesson</a
+>
+<a class="nav" href="{{ url_for('main.placement') }}">◎ &nbsp; Placement</a>
+<div class="side-user">
+  <b>{{ user.display_name or user.email }}</b
+  ><small
+    >{{ profile.current_cefr_level }} → {{ profile.target_cefr_level }}</small
+  ><a href="{{ url_for('auth.logout') }}">Sign out</a>
+</div>
