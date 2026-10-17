@@ -7,8 +7,10 @@ from agent.prompts import CORE_SYSTEM,CORE_USER,PRACTICE_SYSTEM,PRACTICE_USER,VO
 from agent.schemas import CoreLesson,Practice,Lesson
 from config import EXERCISE_COMPOSITION,LISTENING_TASKS,MAX_GENERATION_ATTEMPTS,MAX_KNOWN_WORDS_IN_PROMPT,NEW_WORDS_PER_LESSON,QUIZ_COMPOSITION
 from curriculum import GRAMMAR,SPEAKING_PART_NAMES,PlanDay
+
 T=TypeVar('T',bound=BaseModel)
-class LessonGenerationError(Exception):pass
+class LessonGenerationError(Exception):
+ pass
 def normalize(x):return re.sub(r'\s+',' ',x or '').strip().lower()
 def contains_phrase(text,phrase):return re.search(rf'(?<!\w){re.escape(normalize(phrase))}(?!\w)',normalize(text)) is not None
 def _choice(prefix,options,correct,allowed):
@@ -85,6 +87,7 @@ def build_practice_messages(plan,c):
  sys=fill(PRACTICE_SYSTEM,speaking_part=plan.speaking_part,n_ex_total=sum(EXERCISE_COMPOSITION.values()),n_ex_vocab=EXERCISE_COMPOSITION['vocabulary'],n_ex_grammar=EXERCISE_COMPOSITION['grammar'],per_rule='3 per grammar point',n_ex_le=EXERCISE_COMPOSITION['language_elements'],writing_focus=plan.writing_focus,level=plan.level,writing_min=plan.writing_length[0],writing_max=plan.writing_length[1],speaking_part_name=SPEAKING_PART_NAMES[plan.speaking_part],n_quiz=sum(QUIZ_COMPOSITION.values()),n_mc=QUIZ_COMPOSITION['multiple_choice'],n_fill=QUIZ_COMPOSITION['fill_blank'],n_open=QUIZ_COMPOSITION['open'])
  usr=fill(PRACTICE_USER,level=plan.level,theme=plan.theme_en,situation=plan.situation,reading=c.reading_pl,words=', '.join(v.polish for v in c.new_vocabulary),grammar='\n'.join(f'{g.id}: {g.title}' for g in c.grammar_rules))
  return [{'role':'system','content':sys},{'role':'user','content':usr}]
+
 def generate_lesson(plan,known_words,week_words,progress=None):
  say=progress or (lambda x:None);say('Generating reading, vocabulary, grammar and listening...')
  core=_generate(build_core_messages(plan,known_words,week_words),CoreLesson,lambda x:validate_core(x,plan,known_words,week_words),'core lesson')

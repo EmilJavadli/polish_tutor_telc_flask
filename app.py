@@ -42,8 +42,12 @@ def login_required(fn):
   return fn(*a,**kw)
  return wrapped
 def repos():
- user,profile,_=current();return user,profile,LessonRepository(get_session_factory(),user.id,DATA_DIR/'audio'),EvaluationRepository(get_session_factory(),user.id)
-def payload(x):return x.model_dump(mode='json') if hasattr(x,'model_dump') else x
+  user,profile,_=current()
+  return user,profile,LessonRepository(get_session_factory(),
+                                       user.id,DATA_DIR/'audio'),EvaluationRepository(get_session_factory(),
+                                                                                      user.id)
+def payload(x):
+  return x.model_dump(mode='json') if hasattr(x,'model_dump') else x
 
 @main.get('/')
 def index():
@@ -70,7 +74,9 @@ def generate():
 @main.get('/api/lesson/<int:day>')
 @login_required
 def lesson_json(day):
- _,_,repo,_=repos();lesson=repo.load_lesson(day);return jsonify(payload(lesson)) if lesson else (jsonify({'error':'not found'}),404)
+    _,_,repo,_=repos();lesson=repo.load_lesson(day)
+    return jsonify(payload(lesson)) if lesson else (jsonify({'error':'not found'}),404)
+
 @main.post("/api/lesson/<int:day>/regenerate")
 @login_required
 def regenerate_lesson(day: int):
