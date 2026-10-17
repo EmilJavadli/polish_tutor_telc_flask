@@ -192,10 +192,9 @@ def regenerate_lesson(day: int):
         return jsonify(ok=False, error="Invalid curriculum day."), 400
     try:
         _, _, repository, _ = repos()
-        existing = repository.load_lesson(day)
+        existing, expected = repository.load_lesson_snapshot(day)
         if existing is None:
             return jsonify(ok=False, error="Lesson not found. Generate it first."), 404
-        expected = existing.model_dump(mode="json")
         plan = get_plan_day(day)
         new_lesson = generate_lesson(
             plan,

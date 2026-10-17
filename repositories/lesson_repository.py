@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 from agent.schemas import (
@@ -79,6 +80,20 @@ class LessonRepository:
         with self.sf() as s:
             x = self._record(s, day)
             return Lesson.model_validate(x.lesson_json) if x else None
+
+    def load_lesson_snapshot(self, day):
+        """Return the validated lesson and an independent raw database snapshot.
+
+        Never reconstruct the conflict token with model_dump: schema defaults,
+        coercions, or ignored legacy fields can change the JSON representation
+        even when no other request has modified the database row.
+        """
+        with self.sf() as session:
+            record = self._record(session, day)
+            if record is None:
+                return None, None
+            snapshot = deepcopy(record.lesson_json)
+            return Lesson.model_validate(snapshot), snapshot
 
     def lesson_days(self):
         with self.sf() as s:
